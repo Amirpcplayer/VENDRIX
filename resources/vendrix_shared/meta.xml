@@ -1,0 +1,4 @@
+<meta>
+    <info author="VENDRIX Team" name="VENDRIX Shared" type="script" version="0.1.0" />
+    <script src="shared.lua" type="shared" />
+</meta>
