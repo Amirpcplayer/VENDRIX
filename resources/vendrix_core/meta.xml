@@ -1,0 +1,6 @@
+<meta>
+    <info author="VENDRIX Team" name="VENDRIX Core" type="script" version="0.1.0" />
+    <include resource="vendrix_shared" />
+    <include resource="vendrix_database" />
+    <script src="server.lua" type="server" />
+</meta>
