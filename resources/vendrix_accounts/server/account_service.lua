@@ -1,6 +1,6 @@
 local pending = {}
 local nextRequestId = 1000000
-local lastRequestTick = {}
+local requestRates = {}
 
 local function isPlayer(player)
     return isElement(player) and getElementType(player) == "player"
@@ -16,13 +16,20 @@ end
 
 local function canRequest(player)
     local now = getTickCount()
-    local previous = lastRequestTick[player]
+    local state = requestRates[player]
 
-    if previous and now - previous < VENDRIX_ACCOUNTS.REQUEST_COOLDOWN_MS then
+    if not state or now - state.windowStart >= VENDRIX_ACCOUNTS.RATE_WINDOW_MS then
+        state = { windowStart = now, count = 0, lastRequest = 0 }
+        requestRates[player] = state
+    end
+
+    if now - state.lastRequest < VENDRIX_ACCOUNTS.REQUEST_COOLDOWN_MS
+        or state.count >= VENDRIX_ACCOUNTS.MAX_REQUESTS_PER_WINDOW then
         return false
     end
 
-    lastRequestTick[player] = now
+    state.lastRequest = now
+    state.count = state.count + 1
     return true
 end
 
@@ -100,7 +107,7 @@ function VENDRIX_ACCOUNTS_canRequest(player)
 end
 
 addEventHandler("onPlayerQuit", root, function()
-    lastRequestTick[source] = nil
+    requestRates[source] = nil
 
     for requestId, item in pairs(pending) do
         if item.player == source then
@@ -111,5 +118,5 @@ end)
 
 addEventHandler("onResourceStop", resourceRoot, function()
     pending = {}
-    lastRequestTick = {}
+    requestRates = {}
 end)
