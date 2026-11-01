@@ -1,10 +1,20 @@
+local function diagnostic(message)
+    outputServerLog(("[VENDRIX][DIAG][accounts] %s"):format(message))
+end
+
 local function finish(player, eventName, success, code)
+    diagnostic(("finish event=%s success=%s code=%s"):format(
+        tostring(eventName), tostring(success == true), tostring(code)
+    ))
     VENDRIX_ACCOUNTS_endAction(player)
     VENDRIX_ACCOUNTS_sendResult(player, eventName, success, code)
 end
 
 local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId, errorCode, errorMessage)
     local item = VENDRIX_ACCOUNTS_getPending(requestId)
+    diagnostic(("database callback requestId=%s matched=%s resultType=%s errorCode=%s"):format(
+        tostring(requestId), tostring(item ~= nil), type(result), tostring(errorCode)
+    ))
     if not item then
         return
     end
@@ -203,10 +213,24 @@ end
 addEvent("vendrix:accounts:register", true)
 addEventHandler("vendrix:accounts:register", root, function(username, password)
     local player = client
-    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
-        or not VENDRIX_ACCOUNTS_beginAction(player) then
+    diagnostic(("register event received clientValid=%s sourceIsClient=%s usernameType=%s"):format(
+        tostring(isElement(player) and getElementType(player) == "player"),
+        tostring(source == player),
+        type(username)
+    ))
+    if not player or source ~= player then
+        diagnostic("register rejected: invalid client or event source.")
         return
     end
+    if not VENDRIX_ACCOUNTS_canRequest(player) then
+        diagnostic("register rejected: request rate limit or cooldown.")
+        return
+    end
+    if not VENDRIX_ACCOUNTS_beginAction(player) then
+        diagnostic("register rejected: player already has a pending action.")
+        return
+    end
+    diagnostic("register accepted initial guards.")
 
     if not exports.vendrix_database:isReady() then
         finish(player, "vendrix:accounts:registerResult", false, "database_unavailable")
@@ -228,7 +252,11 @@ addEventHandler("vendrix:accounts:register", root, function(username, password)
         return
     end
 
+    diagnostic("register validation passed; starting bcrypt passwordHash.")
     local accepted = passwordHash(password, "bcrypt", { cost = VENDRIX_ACCOUNTS.BCRYPT_COST }, function(hashedPassword)
+        diagnostic(("passwordHash callback fired; hashType=%s playerValid=%s"):format(
+            type(hashedPassword), tostring(isElement(player))
+        ))
         if not isElement(player) then
             return
         end
@@ -250,11 +278,13 @@ addEventHandler("vendrix:accounts:register", root, function(username, password)
             hashedPassword
         )
 
+        diagnostic(("register INSERT queue result=%s"):format(tostring(queued ~= false and queued ~= nil)))
         if not queued then
             finish(player, "vendrix:accounts:registerResult", false, "database_unavailable")
         end
     end)
 
+    diagnostic(("passwordHash accepted=%s"):format(tostring(accepted == true)))
     if not accepted then
         finish(player, "vendrix:accounts:registerResult", false, "hash_failed")
     end
