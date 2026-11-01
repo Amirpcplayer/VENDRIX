@@ -208,6 +208,11 @@ addEventHandler("vendrix:accounts:register", root, function(username, password)
         return
     end
 
+    if not exports.vendrix_database:isReady() then
+        finish(player, "vendrix:accounts:registerResult", false, "database_unavailable")
+        return
+    end
+
     if isPlayerAuthenticated(player) then
         finish(player, "vendrix:accounts:registerResult", false, "already_authenticated")
         return
@@ -263,6 +268,11 @@ addEventHandler("vendrix:accounts:login", root, function(username, password)
         return
     end
 
+    if not exports.vendrix_database:isReady() then
+        finish(player, "vendrix:accounts:loginResult", false, "database_unavailable")
+        return
+    end
+
     if isPlayerAuthenticated(player) then
         finish(player, "vendrix:accounts:loginResult", false, "already_authenticated")
         return
@@ -292,6 +302,11 @@ addEventHandler("vendrix:accounts:changePassword", root, function(currentPasswor
     local player = client
     if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
         or not isPlayerAuthenticated(player) or not VENDRIX_ACCOUNTS_beginAction(player) then
+        return
+    end
+
+    if not exports.vendrix_database:isReady() then
+        finish(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
         return
     end
 
