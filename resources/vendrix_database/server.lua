@@ -3,6 +3,10 @@
 -- SQL values must use MTA's ? placeholders; SQL identifiers must remain static.
 
 local RESOURCE_NAME = getResourceName(getThisResource())
+local TRUSTED_CALLERS = {
+    vendrix_core = true
+}
+
 local connection = nil
 local ready = false
 local nextQueryId = 0
@@ -22,16 +26,13 @@ local function getSetting(name)
 end
 
 local function isTrustedCaller()
-    -- Only project-owned server resources may use this database boundary.
     -- MTA supplies sourceResource for calls made through resource exports.
     if not sourceResource or not isElement(sourceResource) then
         return false
     end
 
     local callerName = getResourceName(sourceResource)
-    return type(callerName) == "string"
-        and callerName ~= RESOURCE_NAME
-        and callerName:sub(1, 8) == "vendrix_"
+    return type(callerName) == "string" and TRUSTED_CALLERS[callerName] == true
 end
 
 local function isValidHost(value)
@@ -238,7 +239,7 @@ addEventHandler("onResourceStart", resourceRoot, function()
         connectionString,
         username,
         password,
-        "share=0;autoreconnect=0;batch=1;tag=vendrix_database;log=1"
+        "share=0;autoreconnect=0;batch=1;tag=vendrix_database;log=0"
     )
 
     if not connection or not isElement(connection) then
