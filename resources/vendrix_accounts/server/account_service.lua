@@ -19,7 +19,7 @@ local function canRequest(player)
     local state = requestRates[player]
 
     if not state or now - state.windowStart >= VENDRIX_ACCOUNTS.RATE_WINDOW_MS then
-        state = { windowStart = now, count = 0, lastRequest = 0 }
+        state = { windowStart = now, count = 0, lastRequest = now - VENDRIX_ACCOUNTS.REQUEST_COOLDOWN_MS }
         requestRates[player] = state
     end
 
