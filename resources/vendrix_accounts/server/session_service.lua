@@ -1,6 +1,8 @@
 local activeAccounts = {}
 local playerAccounts = {}
 
+addEvent("onVendrixPlayerAuthenticated", false)
+
 function isPlayerAuthenticated(player)
     return isElement(player)
         and getElementType(player) == "player"
@@ -52,6 +54,7 @@ function VENDRIX_ACCOUNTS_createSession(player, accountId)
     setElementData(player, "vendrix:accountId", accountId, false)
     setElementFrozen(player, false)
 
+    triggerEvent("onVendrixPlayerAuthenticated", player, accountId)
     return true
 end
 
