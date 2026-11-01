@@ -1,8 +1,5 @@
-local HISTORY_EVENT = "onVendrixAccountHistoryResult"
 local nextHistoryRequestId = 1500000000
 local historyRequests = {}
-
-addEvent(HISTORY_EVENT, false)
 
 local function allocateHistoryRequestId()
     nextHistoryRequestId = nextHistoryRequestId + 1
