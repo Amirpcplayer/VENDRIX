@@ -227,7 +227,7 @@ addEventHandler("vendrix:accounts:history", resourceRoot, function(rows, errorCo
         setStatus(messages[errorCode] or "Tarikhche vorood dar dastres nist.", false)
     else
         historyRows = rows
-        setStatus("Tarik 90 rooze hesab shoma.", true)
+        setStatus("Tarikhche 90 rooze hesab shoma.", true)
     end
     mode = "history"
     rebuildInputs()
