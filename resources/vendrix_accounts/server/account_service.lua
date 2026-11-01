@@ -59,10 +59,13 @@ local function validPassword(password)
         return false
     end
 
+    if #password > VENDRIX_ACCOUNTS.PASSWORD_MAX_BYTES then
+        return false
+    end
+
     local characterLength = utfLen(password)
-    return characterLength ~= false
+    return type(characterLength) == "number"
         and characterLength >= VENDRIX_ACCOUNTS.PASSWORD_MIN_LENGTH
-        and #password <= VENDRIX_ACCOUNTS.PASSWORD_MAX_BYTES
 end
 
 function VENDRIX_ACCOUNTS_beginAction(player)
