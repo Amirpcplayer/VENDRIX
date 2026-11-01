@@ -16,7 +16,7 @@ Initial technical foundation for the VENDRIX MTA:SA server.
 - Run the local development connection test before considering deployment.
 
 ## Database API
-Only server resources whose names begin with `vendrix_` may call the database exports.
+At this phase, only `vendrix_core` is allowlisted to call the database exports. Add future VENDRIX resources to the allowlist only when their responsibility and access requirements are reviewed.
 Use `exports.vendrix_database:isReady()` to check readiness and
 `exports.vendrix_database:queryAsync(callback, sql, ...)` for parameterized queries.
 Query callbacks receive `result, affectedRows, lastInsertId, errorCode, errorMessage`.
