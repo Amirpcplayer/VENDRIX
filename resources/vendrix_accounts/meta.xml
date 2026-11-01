@@ -12,6 +12,7 @@
     <file src="web/index.html" />
     <file src="web/css/app.css" />
     <file src="web/js/app.js" />
+    <file src="assets/portal-image.png" />
     <export function="isPlayerAuthenticated" type="server" />
     <export function="getPlayerAccountId" type="server" />
 </meta>
