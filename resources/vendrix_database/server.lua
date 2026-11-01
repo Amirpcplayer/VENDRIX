@@ -10,7 +10,8 @@ local TRUSTED_CALLERS = {
 local connection = nil
 local ready = false
 local nextQueryId = 0
-local pendingCallbacks = {}
+local pendingRequests = {}
+local COMPLETION_EVENT = "onVendrixDatabaseQueryComplete"
 
 local function log(level, message)
     outputServerLog(("[VENDRIX][%s][database] %s"):format(level, message))
@@ -62,11 +63,17 @@ local function destroyConnection()
     connection = nil
 end
 
-local function invokeCallback(callback, ...)
-    local ok = pcall(callback, ...)
-    if not ok then
-        log("ERROR", "A resource query callback raised an error.")
+local function dispatchResult(pending, ...)
+    if not pending or not pending.callerRoot then
+        return
     end
+
+    if not isElement(pending.callerRoot)
+        or getElementType(pending.callerRoot) ~= "resource" then
+        return
+    end
+
+    triggerEvent(COMPLETION_EVENT, pending.callerRoot, pending.requestId, ...)
 end
 
 local function onInitialConnectionCheck(queryHandle)
@@ -87,8 +94,8 @@ local function onInitialConnectionCheck(queryHandle)
 end
 
 local function onQueryComplete(queryHandle, queryId)
-    local pending = pendingCallbacks[queryId]
-    pendingCallbacks[queryId] = nil
+    local pending = pendingRequests[queryId]
+    pendingRequests[queryId] = nil
 
     if not pending then
         return
@@ -105,8 +112,8 @@ local function onQueryComplete(queryHandle, queryId)
             log("WARN", "Database connection was lost. Restart vendrix_database after restoring MariaDB.")
         end
 
-        invokeCallback(
-            pending.callback,
+        dispatchResult(
+            pending,
             false,
             nil,
             nil,
@@ -118,13 +125,13 @@ local function onQueryComplete(queryHandle, queryId)
 
     if result == nil then
         dbFree(queryHandle)
-        invokeCallback(pending.callback, false, nil, nil, -1, "Query result was not ready.")
+        dispatchResult(pending, false, nil, nil, -1, "Query result was not ready.")
         log("ERROR", "MTA returned an unfinished query from its completion callback.")
         return
     end
 
-    invokeCallback(
-        pending.callback,
+    dispatchResult(
+        pending,
         result,
         affectedRows,
         lastInsertId,
@@ -167,8 +174,9 @@ function isReady()
     return ready and connectionValid
 end
 
-function queryAsync(callback, sql, ...)
-    -- Capture the hidden export context before entering any helper function.
+function queryAsync(requestId, sql, ...)
+    -- Exports cannot safely transfer Lua callback functions between resources.
+    -- Capture the caller and return completion through a server-side resource event.
     local callerResource = sourceResource
     local trusted, callerName = isTrustedCaller(callerResource)
     if not trusted then
@@ -181,13 +189,24 @@ function queryAsync(callback, sql, ...)
         return false
     end
 
-    if type(callback) ~= "function" then
-        log("WARN", "queryAsync rejected request because callback is not a function.")
+    if type(requestId) ~= "number"
+        or requestId < 1
+        or requestId % 1 ~= 0
+        or requestId > 2147483647 then
+        log("WARN", "queryAsync rejected request because requestId is invalid.")
         return false
     end
 
     if type(sql) ~= "string" or sql == "" or #sql > 65535 then
         log("WARN", "queryAsync rejected request because SQL text is invalid.")
+        return false
+    end
+
+    local callerRoot = getResourceRootElement(callerResource)
+    if not callerRoot or not isElement(callerRoot) then
+        log("WARN", ("queryAsync rejected request because caller root is unavailable (%s)."):format(
+            tostring(callerName)
+        ))
         return false
     end
 
@@ -209,11 +228,12 @@ function queryAsync(callback, sql, ...)
 
     repeat
         nextQueryId = nextQueryId + 1
-    until pendingCallbacks[nextQueryId] == nil
+    until pendingRequests[nextQueryId] == nil
 
     local queryId = nextQueryId
-    pendingCallbacks[queryId] = {
-        callback = callback
+    pendingRequests[queryId] = {
+        callerRoot = callerRoot,
+        requestId = requestId
     }
 
     local ok, queryHandle = pcall(
@@ -226,19 +246,20 @@ function queryAsync(callback, sql, ...)
     )
 
     if not ok then
-        pendingCallbacks[queryId] = nil
+        pendingRequests[queryId] = nil
         log("ERROR", ("dbQuery raised an error while queueing query: %s"):format(tostring(queryHandle)))
         return false
     end
 
     if not queryHandle then
-        pendingCallbacks[queryId] = nil
+        pendingRequests[queryId] = nil
         log("ERROR", "dbQuery returned no query handle; inspect the MTA database error log for the driver-level reason.")
         return false
     end
 
-    log("DEBUG", ("queryAsync queued query id=%d from caller=%s."):format(
+    log("DEBUG", ("queryAsync queued query id=%d request id=%d from caller=%s."):format(
         queryId,
+        requestId,
         tostring(callerName)
     ))
     return true
@@ -298,7 +319,7 @@ addEventHandler("onResourceStart", resourceRoot, function()
 end)
 
 addEventHandler("onResourceStop", resourceRoot, function()
-    pendingCallbacks = {}
+    pendingRequests = {}
     destroyConnection()
     log("INFO", "Database connection closed.")
 end)
