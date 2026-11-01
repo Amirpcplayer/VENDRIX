@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>VENDRIX NEXUS</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="scene">
+    <div class="backdrop"></div><div class="vignette"></div><div class="grain"></div>
+    <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+    <section class="shell">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">V</span><div><strong>VENDRIX</strong><small>N E X U S&nbsp; I D</small></div></div>
+        <div class="network"><i></i><span>SECURE NETWORK</span><small>IDENTITY GATEWAY / ONLINE</small></div>
+      </header>
+      <div class="content">
+        <section class="intro">
+          <div class="eyebrow"><span></span> YOUR WORLD STARTS HERE</div>
+          <h1>One world.<br><em>One identity.</em></h1>
+          <p>Enter the VENDRIX network and continue your journey.</p>
+          <div class="portal-wrap" aria-hidden="true"><div class="portal"><div class="portal-core"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div></div><span class="portal-label">NEXUS ACCESS POINT</span></div>
+          <div class="intro-foot"><span>VENDRIX ROLEPLAY NETWORK</span><span>EST. 2026</span></div>
+        </section>
+        <section class="auth-area">
+          <div class="auth-card">
+            <div class="card-head"><div><span class="eyebrow">ACCOUNT AUTHENTICATION</span><h2 id="title">Welcome back</h2><p id="subtitle">Sign in to access your identity.</p></div><div class="secure-icon">✧</div></div>
+            <nav class="tabs" id="authTabs"><button class="tab active" data-mode="login">VOROOD</button><button class="tab" data-mode="register">SABT NAM</button></nav>
+            <form id="authForm" autocomplete="off">
+              <label>USERNAME<input id="username" name="username" maxlength="20" minlength="3" required placeholder="Enter your username"></label>
+              <label>PASSWORD<input id="password" name="password" type="password" maxlength="72" required placeholder="Enter your password"></label>
+              <label id="confirmWrap" class="hidden">CONFIRM PASSWORD<input id="confirm" type="password" maxlength="72" placeholder="Repeat your password"></label>
+              <button class="primary" type="submit" id="submit">VOROOD BE HESAB <span>↗</span></button>
+            </form>
+            <div id="dashboard" class="hidden">
+              <div class="account-state"><i></i><span>IDENTITY VERIFIED</span></div>
+              <button class="primary action" data-action="password">TAGHIR RAMZ <span>↗</span></button>
+              <button class="secondary action" data-action="history">TARIKHCHE VOROOD</button>
+              <button class="secondary action" data-action="logout">KHOROOJ AZ HESAB</button>
+            </div>
+            <div id="passwordPanel" class="hidden">
+              <label>CURRENT PASSWORD<input id="currentPassword" type="password" maxlength="72"></label>
+              <label>NEW PASSWORD<input id="newPassword" type="password" maxlength="72"></label>
+              <label>CONFIRM NEW PASSWORD<input id="newConfirm" type="password" maxlength="72"></label>
+              <button class="primary" id="savePassword">ZAKHIRE RAMZ <span>↗</span></button>
+              <button class="secondary" id="cancelPassword">BAZGASHT</button>
+            </div>
+            <div id="historyPanel" class="hidden"><div class="history-list" id="historyList"></div><button class="secondary" id="backHistory">BAZGASHT</button></div>
+            <div class="status" id="status" role="status" aria-live="polite">Lotfan etelaate hesab ra vared konid.</div>
+            <div class="card-foot"><span>ENCRYPTED SESSION</span><span>VENDRIX&nbsp; / &nbsp;NEXUS</span></div>
+          </div>
+          <div class="bottom-note">BY CONTINUING, YOU AGREE TO THE NETWORK RULES.</div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
