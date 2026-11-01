@@ -1,5 +1,5 @@
 local screenW, screenH = guiGetScreenSize()
-local BASE_W, BASE_H = 980, 690
+local BASE_W, BASE_H = 980, 730
 local scale = math.min(screenW / 1440, screenH / 900, 1.15)
 local panelW, panelH = BASE_W * scale, BASE_H * scale
 local panelX, panelY = (screenW - panelW) / 2, (screenH - panelH) / 2
