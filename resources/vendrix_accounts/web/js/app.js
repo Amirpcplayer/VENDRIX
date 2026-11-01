@@ -22,7 +22,7 @@
     logged_out: ["Az hesab kharej shodid.", "success"],
     history_unavailable: ["Tarikhche vorood dar dastres nist.", "error"]
   };
-  function bridge(action, data) {
+  let audioUnlockSent = false;\n  document.addEventListener("pointerdown", function () {\n    if (audioUnlockSent || !window.mta || typeof window.mta.triggerEvent !== "function") return;\n    audioUnlockSent = true;\n    window.mta.triggerEvent("vendrix:accounts:cefInteraction");\n  }, { once: true });\n  function bridge(action, data) {
     if (state.busy) return;
     if (window.mta && typeof window.mta.triggerEvent === "function") {
       state.busy = true;
