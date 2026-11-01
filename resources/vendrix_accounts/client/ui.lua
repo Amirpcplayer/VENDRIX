@@ -133,7 +133,7 @@ local function renderPanel()
         drawButton(panelX + 288, panelY + 430, 218, 38, "BAZGASHT", false)
         dxDrawText(statusText, panelX + 54, panelY + 475, panelX + panelW - 54, panelY + 505,
             statusGood and tocolor(80, 220, 180, 255) or tocolor(255, 175, 120, 255),
-            0.9, "default", "left", "center", true)
+            0.9, "default", "left", "center", false)
     elseif mode == "history" then
         dxDrawText("Tarikhche Vorood", panelX + 54, panelY + 112,
             panelX + panelW - 54, panelY + 148, tocolor(240, 248, 255, 255),
@@ -227,7 +227,7 @@ addEventHandler("vendrix:accounts:history", resourceRoot, function(rows, errorCo
         setStatus(messages[errorCode] or "Tarikhche vorood dar dastres nist.", false)
     else
         historyRows = rows
-        setStatus("Tarikچه 90 rooze hesab shoma.", true)
+        setStatus("Tarik 90 rooze hesab shoma.", true)
     end
     mode = "history"
     rebuildInputs()
@@ -278,7 +278,7 @@ addEventHandler("onClientClick", root, function(button, state)
             rebuildInputs()
         elseif isMouseInPosition(panelX + 54, panelY + 260, 452, 42) then
             triggerServerEvent("vendrix:accounts:requestHistory", localPlayer)
-            setStatus("Dar hale daryaft tarikچه...", false)
+            setStatus("Dar hale daryaft tarik...", false)
         elseif isMouseInPosition(panelX + 54, panelY + 315, 452, 42) then
             triggerServerEvent("vendrix:accounts:logout", localPlayer)
         end
