@@ -46,6 +46,7 @@ function VENDRIX_ACCOUNTS_createSession(player, accountId)
     playerAccounts[player] = accountId
     setElementData(player, "vendrix:authenticated", true, false)
     setElementData(player, "vendrix:accountId", accountId, false)
+    setElementFrozen(player, false)
 
     return true
 end
@@ -58,11 +59,24 @@ function VENDRIX_ACCOUNTS_destroySession(player)
     releasePlayerSession(player)
     removeElementData(player, "vendrix:authenticated")
     removeElementData(player, "vendrix:accountId")
+    setElementFrozen(player, true)
     return true
 end
 
+addEventHandler("onPlayerJoin", root, function()
+    setElementFrozen(source, true)
+end)
+
 addEventHandler("onPlayerQuit", root, function()
     releasePlayerSession(source)
+end)
+
+addEventHandler("onResourceStart", resourceRoot, function()
+    for _, player in ipairs(getElementsByType("player")) do
+        if not isPlayerAuthenticated(player) then
+            setElementFrozen(player, true)
+        end
+    end
 end)
 
 addEventHandler("onResourceStop", resourceRoot, function()
@@ -70,6 +84,7 @@ addEventHandler("onResourceStop", resourceRoot, function()
         if isElement(player) then
             removeElementData(player, "vendrix:authenticated")
             removeElementData(player, "vendrix:accountId")
+            setElementFrozen(player, true)
         end
     end
 
