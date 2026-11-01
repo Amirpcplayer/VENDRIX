@@ -33,6 +33,10 @@ function VENDRIX_ACCOUNTS_createSession(player, accountId)
         return false, "invalid_player"
     end
 
+    if type(accountId) ~= "number" or accountId < 1 or accountId % 1 ~= 0 then
+        return false, "invalid_account"
+    end
+
     if playerAccounts[player] then
         return false, "player_already_authenticated"
     end
