@@ -2,10 +2,6 @@ local pending = {}
 local nextRequestId = 1000000
 local lastRequestTick = {}
 
-local function log(level, message)
-    outputServerLog(("[VENDRIX][%s][accounts] %s"):format(level, message))
-end
-
 local function isPlayer(player)
     return isElement(player) and getElementType(player) == "player"
 end
@@ -20,9 +16,9 @@ end
 
 local function canRequest(player)
     local now = getTickCount()
-    local previous = lastRequestTick[player] or 0
+    local previous = lastRequestTick[player]
 
-    if now - previous < VENDRIX_ACCOUNTS.REQUEST_COOLDOWN_MS then
+    if previous and now - previous < VENDRIX_ACCOUNTS.REQUEST_COOLDOWN_MS then
         return false
     end
 
@@ -61,12 +57,16 @@ local function validPassword(password)
         and #password <= VENDRIX_ACCOUNTS.PASSWORD_MAX_BYTES
 end
 
-local function queueRequest(player, action, sql, ...)
+function VENDRIX_ACCOUNTS_queueRequest(player, action, metadata, sql, ...)
+    if not isPlayer(player) then
+        return false
+    end
+
     local requestId = allocateRequestId()
-    pending[requestId] = {
-        player = player,
-        action = action
-    }
+    local item = metadata or {}
+    item.player = player
+    item.action = action
+    pending[requestId] = item
 
     local queued = exports.vendrix_database:queryAsync(requestId, sql, ...)
     if not queued then
@@ -74,11 +74,7 @@ local function queueRequest(player, action, sql, ...)
         return false
     end
 
-    return true
-end
-
-function VENDRIX_ACCOUNTS_queueRequest(player, action, sql, ...)
-    return queueRequest(player, action, sql, ...)
+    return requestId
 end
 
 function VENDRIX_ACCOUNTS_getPending(requestId)
@@ -100,7 +96,7 @@ function VENDRIX_ACCOUNTS_validPassword(password)
 end
 
 function VENDRIX_ACCOUNTS_canRequest(player)
-    return canRequest(player)
+    return isPlayer(player) and canRequest(player)
 end
 
 addEventHandler("onPlayerQuit", root, function()
