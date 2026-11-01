@@ -1,5 +1,17 @@
 <meta>
-    <info author="VENDRIX Team" name="VENDRIX Database" type="script" version="0.1.0" />
+    <info author="VENDRIX Team" name="VENDRIX Database" type="script" version="0.2.0" />
     <include resource="vendrix_shared" />
+
+    <settings>
+        <setting name="@db_host" value="" friendlyname="MariaDB host" desc="Database server hostname or IP address." />
+        <setting name="@db_port" value="3306" friendlyname="MariaDB port" desc="Database server TCP port." />
+        <setting name="@db_name" value="" friendlyname="Database name" desc="VENDRIX database name." />
+        <setting name="@db_user" value="" friendlyname="Database username" desc="Dedicated least-privilege MariaDB user." />
+        <setting name="@db_password" value="" friendlyname="Database password" desc="Private database password. Never commit or share this value." />
+    </settings>
+
     <script src="server.lua" type="server" />
+
+    <export function="isReady" type="server" />
+    <export function="queryAsync" type="server" />
 </meta>
