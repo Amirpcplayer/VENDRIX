@@ -4,7 +4,8 @@
 
 local RESOURCE_NAME = getResourceName(getThisResource())
 local TRUSTED_CALLERS = {
-    vendrix_core = true
+    vendrix_core = true,
+    vendrix_accounts = true
 }
 
 local connection = nil
