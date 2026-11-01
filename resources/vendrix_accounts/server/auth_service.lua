@@ -16,7 +16,14 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
 
     if item.action == "register_insert" then
         if result == false then
-            local code = tonumber(errorCode) == 1062 and "username_taken" or "register_failed"
+            local code
+            if tonumber(errorCode) == 1062 then
+                code = "username_taken"
+            elseif errorCode then
+                code = "database_unavailable"
+            else
+                code = "register_failed"
+            end
             finish(player, "vendrix:accounts:registerResult", false, code)
         else
             finish(player, "vendrix:accounts:registerResult", true, "registered")
@@ -25,6 +32,12 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
     end
 
     if item.action == "login_lookup" then
+        if result == false then
+            item.password = nil
+            finish(player, "vendrix:accounts:loginResult", false, "database_unavailable")
+            return
+        end
+
         if type(result) ~= "table" or not result[1] then
             VENDRIX_ACCOUNTS_recordLogin(nil, item.username, false, "invalid_credentials")
             finish(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
@@ -52,6 +65,13 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
     end
 
     if item.action == "password_lookup" then
+        if result == false then
+            item.currentPassword = nil
+            item.newPassword = nil
+            finish(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
+            return
+        end
+
         if type(result) ~= "table" or not result[1] then
             finish(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
             item.currentPassword = nil
@@ -72,7 +92,9 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
     end
 
     if item.action == "password_update" then
-        if result == false or tonumber(affectedRows) ~= 1 then
+        if result == false then
+            finish(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
+        elseif tonumber(affectedRows) ~= 1 then
             finish(player, "vendrix:accounts:passwordResult", false, "password_update_failed")
         else
             finish(player, "vendrix:accounts:passwordResult", true, "password_changed")
