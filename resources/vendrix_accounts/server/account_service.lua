@@ -1,6 +1,7 @@
 local pending = {}
 local nextRequestId = 1000000
 local requestRates = {}
+local busyPlayers = {}
 
 local function isPlayer(player)
     return isElement(player) and getElementType(player) == "player"
@@ -64,12 +65,30 @@ local function validPassword(password)
         and #password <= VENDRIX_ACCOUNTS.PASSWORD_MAX_BYTES
 end
 
+function VENDRIX_ACCOUNTS_beginAction(player)
+    if not isPlayer(player) or busyPlayers[player] then
+        return false
+    end
+
+    busyPlayers[player] = true
+    return true
+end
+
+function VENDRIX_ACCOUNTS_endAction(player)
+    if player then
+        busyPlayers[player] = nil
+    end
+end
+
 function VENDRIX_ACCOUNTS_queueRequest(player, action, metadata, sql, ...)
     if not isPlayer(player) then
         return false
     end
 
-    local requestId = allocateRequestId()
+    local requestId
+    repeat
+        requestId = allocateRequestId()
+    until pending[requestId] == nil
     local item = metadata or {}
     item.player = player
     item.action = action
@@ -108,6 +127,7 @@ end
 
 addEventHandler("onPlayerQuit", root, function()
     requestRates[source] = nil
+    busyPlayers[source] = nil
 
     for requestId, item in pairs(pending) do
         if item.player == source then
@@ -119,4 +139,5 @@ end)
 addEventHandler("onResourceStop", resourceRoot, function()
     pending = {}
     requestRates = {}
+    busyPlayers = {}
 end)
