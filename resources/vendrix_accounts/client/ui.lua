@@ -16,10 +16,7 @@ local function destroyInputs()
     controls = {}
 end
 
-local function createInput(key, caption, y, masked)
-    dxDrawText(caption, panelX + 54, panelY + y - 22, panelX + panelW - 54, panelY + y - 2,
-        tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
-
+local function createInput(key, y, masked)
     local edit = guiCreateEdit(panelX + 54, panelY + y, panelW - 108, 38, "", false)
     guiSetAlpha(edit, 0.94)
     guiSetProperty(edit, "NormalTextColour", "FFEAF7FF")
@@ -100,6 +97,11 @@ local function renderPanel()
             panelX + panelW - 54, panelY + 148, tocolor(240, 248, 255, 255),
             1.35, "default-bold", "left", "center")
 
+        dxDrawText("Nam-e Karbari", panelX + 54, panelY + 195, panelX + panelW - 54, panelY + 218, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
+        dxDrawText("Ramz-e Obor", panelX + 54, panelY + 260, panelX + panelW - 54, panelY + 283, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
+        if mode == "register" then
+            dxDrawText("Tekrar Ramz-e Obor", panelX + 54, panelY + 325, panelX + panelW - 54, panelY + 348, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
+        end
         drawButton(panelX + 54, panelY + 160, 218, 34, "VOROOD", mode == "login")
         drawButton(panelX + 288, panelY + 160, 218, 34, "SABT NAM", mode == "register")
 
@@ -121,16 +123,19 @@ local function renderPanel()
             statusGood and tocolor(80, 220, 180, 255) or tocolor(255, 175, 120, 255),
             1, "default", "center", "center", true)
     elseif mode == "password" then
-        dxDrawText("Taghir Ramz-e عبور", panelX + 54, panelY + 112,
+        dxDrawText("Taghir Ramz-e Obor", panelX + 54, panelY + 112,
             panelX + panelW - 54, panelY + 148, tocolor(240, 248, 255, 255),
             1.25, "default-bold", "left", "center")
+        dxDrawText("Ramz-e Feli", panelX + 54, panelY + 165, panelX + panelW - 54, panelY + 188, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
+        dxDrawText("Ramz-e Jadid", panelX + 54, panelY + 230, panelX + panelW - 54, panelY + 253, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
+        dxDrawText("Tekrar Ramz-e Jadid", panelX + 54, panelY + 295, panelX + panelW - 54, panelY + 318, tocolor(160, 190, 215, 255), 1, "default-bold", "left", "center")
         drawButton(panelX + 54, panelY + 430, 218, 38, "ZAKHIRE RAMZ", true)
-        drawButton(panelX + 288, panelY + 430, 218, 38, "BAZگASHT", false)
+        drawButton(panelX + 288, panelY + 430, 218, 38, "BAZGASHT", false)
         dxDrawText(statusText, panelX + 54, panelY + 475, panelX + panelW - 54, panelY + 505,
             statusGood and tocolor(80, 220, 180, 255) or tocolor(255, 175, 120, 255),
             0.9, "default", "left", "center", true)
     elseif mode == "history" then
-        dxDrawText("Tarikچه Vorood", panelX + 54, panelY + 112,
+        dxDrawText("Tarikhche Vorood", panelX + 54, panelY + 112,
             panelX + panelW - 54, panelY + 148, tocolor(240, 248, 255, 255),
             1.25, "default-bold", "left", "center")
         for index = 1, math.min(#historyRows, 10) do
@@ -142,23 +147,23 @@ local function renderPanel()
                 tonumber(row.result) == 1 and tocolor(100, 220, 185, 255) or tocolor(245, 160, 125, 255),
                 0.95, "default", "left", "center", true)
         end
-        drawButton(panelX + 54, panelY + 430, 452, 38, "BAZگASHT", false)
+        drawButton(panelX + 54, panelY + 430, 452, 38, "BAZGASHT", false)
     end
 end
 
 local function rebuildInputs()
     destroyInputs()
     if mode == "login" then
-        createInput("username", "Nam-e Karbari", 220, false)
-        createInput("password", "Ramz-e Obor", 285, true)
+        createInput("username", 220, false)
+        createInput("password", 285, true)
     elseif mode == "register" then
-        createInput("username", "Nam-e Karbari (3 ta 20)", 220, false)
-        createInput("password", "Ramz-e Obor (Min 10)", 285, true)
-        createInput("confirm", "Tekrar Ramz-e Obor", 350, true)
+        createInput("username", 220, false)
+        createInput("password", 285, true)
+        createInput("confirm", 350, true)
     elseif mode == "password" then
-        createInput("current", "Ramz-e Feli", 190, true)
-        createInput("new", "Ramz-e Jadid", 255, true)
-        createInput("confirm", "Tekrar Ramz-e Jadid", 320, true)
+        createInput("current", 190, true)
+        createInput("new", 255, true)
+        createInput("confirm", 320, true)
     end
 end
 
