@@ -170,24 +170,30 @@ end
 function queryAsync(callback, sql, ...)
     -- Capture the hidden export context before entering any helper function.
     local callerResource = sourceResource
-    local trusted = isTrustedCaller(callerResource)
+    local trusted, callerName = isTrustedCaller(callerResource)
     if not trusted then
+        log("WARN", ("queryAsync rejected caller=%s."):format(tostring(callerName)))
         return false
     end
 
     if not ready or not connection or not isElement(connection) then
+        log("WARN", "queryAsync rejected request because the database is not ready.")
         return false
     end
 
-    if type(callback) ~= "function"
-        or type(sql) ~= "string"
-        or sql == ""
-        or #sql > 65535 then
+    if type(callback) ~= "function" then
+        log("WARN", "queryAsync rejected request because callback is not a function.")
+        return false
+    end
+
+    if type(sql) ~= "string" or sql == "" or #sql > 65535 then
+        log("WARN", "queryAsync rejected request because SQL text is invalid.")
         return false
     end
 
     local parameterCount = select("#", ...)
     if parameterCount > 64 then
+        log("WARN", "queryAsync rejected request because it has too many parameters.")
         return false
     end
 
@@ -195,6 +201,7 @@ function queryAsync(callback, sql, ...)
     for index = 1, parameterCount do
         local value = select(index, ...)
         if not isValidParameter(value) then
+            log("WARN", ("queryAsync rejected unsupported parameter type at index %d."):format(index))
             return false
         end
         parameters[index] = value
@@ -218,12 +225,22 @@ function queryAsync(callback, sql, ...)
         unpack(parameters, 1, parameterCount)
     )
 
-    if not ok or not queryHandle then
+    if not ok then
         pendingCallbacks[queryId] = nil
-        log("ERROR", "MTA could not queue a database query.")
+        log("ERROR", ("dbQuery raised an error while queueing query: %s"):format(tostring(queryHandle)))
         return false
     end
 
+    if not queryHandle then
+        pendingCallbacks[queryId] = nil
+        log("ERROR", "dbQuery returned no query handle; inspect the MTA database error log for the driver-level reason.")
+        return false
+    end
+
+    log("DEBUG", ("queryAsync queued query id=%d from caller=%s."):format(
+        queryId,
+        tostring(callerName)
+    ))
     return true
 end
 
