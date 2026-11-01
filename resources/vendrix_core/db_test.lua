@@ -5,8 +5,41 @@
 local MAX_ATTEMPTS = 10
 local RETRY_INTERVAL_MS = 500
 local attempts = 0
+local TEST_REQUEST_ID = 700001
+
+addEvent("onVendrixDatabaseQueryComplete", false)
+
+addEventHandler("onVendrixDatabaseQueryComplete", resourceRoot, function(
+    requestId,
+    result,
+    affectedRows,
+    lastInsertId,
+    errorCode,
+    errorMessage
+)
+    if requestId ~= TEST_REQUEST_ID then
+        return
+    end
+
+    if type(result) ~= "table"
+        or not result[1]
+        or tonumber(result[1].query_ok) ~= 1 then
+        outputServerLog(
+            "[VENDRIX][TEST][FAIL] Query failed. Error code: "
+            .. tostring(errorCode or "unknown")
+            .. "; message: "
+            .. tostring(errorMessage or "no details")
+        )
+        return
+    end
+
+    outputServerLog(
+        "[VENDRIX][TEST][SUCCESS] Event-based queryAsync returned the expected result."
+    )
+end)
 
 local function runQueryTest()
+    attempts = attempts + 1
     local database = exports.vendrix_database
 
     outputServerLog(("[VENDRIX][TEST] Readiness check %d/%d..."):format(
@@ -19,38 +52,25 @@ local function runQueryTest()
             setTimer(runQueryTest, RETRY_INTERVAL_MS, 1)
         else
             outputServerLog(
-                "[VENDRIX][TEST][FAIL] Database did not become ready after 5 seconds. Check database DEBUG logs for caller/trust/readiness state."
+                "[VENDRIX][TEST][FAIL] Database did not become ready after 5 seconds."
             )
         end
         return
     end
 
-    outputServerLog("[VENDRIX][TEST] Sending asynchronous read-only SELECT query...")
+    outputServerLog("[VENDRIX][TEST] Sending event-based asynchronous read-only SELECT query...")
 
-    local queued = database:queryAsync(function(result, affectedRows, lastInsertId, errorCode)
-        if type(result) ~= "table"
-            or not result[1]
-            or tonumber(result[1].query_ok) ~= 1 then
-            outputServerLog(
-                "[VENDRIX][TEST][FAIL] Query failed. Error code: "
-                .. tostring(errorCode or "unknown")
-            )
-            return
-        end
-
-        outputServerLog(
-            "[VENDRIX][TEST][SUCCESS] queryAsync returned the expected result."
-        )
-    end, "SELECT 1 AS query_ok")
-
+    local queued = database:queryAsync(TEST_REQUEST_ID, "SELECT 1 AS query_ok")
     if not queued then
         outputServerLog(
-            "[VENDRIX][TEST][FAIL] Query could not be queued although isReady returned true."
+            "[VENDRIX][TEST][FAIL] Event-based query could not be queued. Check database logs."
         )
+        return
     end
+
+    outputServerLog("[VENDRIX][TEST] Query queued; waiting for completion event...")
 end
 
 addEventHandler("onResourceStart", resourceRoot, function()
-    attempts = 1
     setTimer(runQueryTest, RETRY_INTERVAL_MS, 1)
 end)
