@@ -149,13 +149,13 @@ local function handleBrowserAction(action, data)
 end
 
 addEvent("vendrix:accounts:cefAction", true)
-addEventHandler("vendrix:accounts:cefAction", resourceRoot, function(action, data)
+addEventHandler("vendrix:accounts:cefAction", root, function(action, data)
     startMusic()
     handleBrowserAction(action, data)
 end)
 
 addEvent("vendrix:accounts:cefInteraction", true)
-addEventHandler("vendrix:accounts:cefInteraction", resourceRoot, startMusic)
+addEventHandler("vendrix:accounts:cefInteraction", root, startMusic)
 
 addEvent("vendrix:accounts:registerResult", true)
 addEventHandler("vendrix:accounts:registerResult", resourceRoot, function(success, code)
