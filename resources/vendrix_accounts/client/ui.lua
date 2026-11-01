@@ -128,9 +128,8 @@ local function handleBrowserAction(action, data)
             or "vendrix:accounts:login"
 
         local triggered = triggerServerEvent(eventName, localPlayer, username, password)
-        diagnostic(("triggerServerEvent event=%s returned=%s"):format(
-            eventName, tostring(triggered)
-        ))
+        diagnostic(("triggerServerEvent event=%s returned=%s"):format(eventName, tostring(triggered)))
+        if not triggered then sendToBrowser(action .. "Result", false, "event_failed") end
         return
     end
 
