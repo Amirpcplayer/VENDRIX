@@ -167,6 +167,7 @@ addEventHandler("vendrix:accounts:loginResult", resourceRoot, function(success, 
     sendToBrowser("loginResult", success == true, code)
     if success then
         stopMusic()
+        setUIVisible(false)
     end
 end)
 
@@ -180,6 +181,7 @@ addEventHandler("vendrix:accounts:logoutResult", resourceRoot, function(success,
     sendToBrowser("logoutResult", success == true, code)
     if success then
         startMusic()
+        setUIVisible(true)
     end
 end)
 
