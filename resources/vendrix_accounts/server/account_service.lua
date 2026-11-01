@@ -2,6 +2,13 @@ local pending = {}
 local nextRequestId = 1000000
 local requestRates = {}
 local busyPlayers = {}
+local REQUEST_TIMEOUT_MS = 20000
+local RESULT_EVENTS = {
+    register_insert = "vendrix:accounts:registerResult",
+    login_lookup = "vendrix:accounts:loginResult",
+    password_lookup = "vendrix:accounts:passwordResult",
+    password_update = "vendrix:accounts:passwordResult"
+}
 
 local function isPlayer(player)
     return isElement(player) and getElementType(player) == "player"
@@ -102,13 +109,23 @@ function VENDRIX_ACCOUNTS_queueRequest(player, action, metadata, sql, ...)
         pending[requestId] = nil
         return false
     end
-
+    item.timeout = setTimer(function(id)
+        local expired = pending[id]
+        if not expired then return end
+        pending[id] = nil
+        if isPlayer(expired.player) then
+            busyPlayers[expired.player] = nil
+            sendResult(expired.player, RESULT_EVENTS[expired.action] or "vendrix:accounts:loginResult", false, "request_timeout")
+        end
+        outputServerLog(("[VENDRIX][WARN][accounts] timed out requestId=%s action=%s"):format(tostring(id), tostring(expired.action)))
+    end, REQUEST_TIMEOUT_MS, 1, requestId)
     return requestId
 end
 
 function VENDRIX_ACCOUNTS_getPending(requestId)
     local item = pending[requestId]
     pending[requestId] = nil
+    if item and isTimer(item.timeout) then killTimer(item.timeout) end
     return item
 end
 
