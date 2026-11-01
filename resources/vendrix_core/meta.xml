@@ -3,5 +3,4 @@
     <include resource="vendrix_shared" />
     <include resource="vendrix_database" />
     <script src="server.lua" type="server" />
-    <script src="db_test.lua" type="server" />
 </meta>
