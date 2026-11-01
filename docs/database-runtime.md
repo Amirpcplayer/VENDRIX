@@ -45,7 +45,7 @@ if exports.vendrix_database:isReady() then
 end
 ```
 
-Only resources whose names begin with `vendrix_` may call the exports.
+At this phase, only the exact resource name `vendrix_core` is allowlisted. Future domain resources must be added explicitly after review.
 
 ### Asynchronous query
 
@@ -71,5 +71,7 @@ local queued = exports.vendrix_database:queryAsync(
 - SQL values must use `?` placeholders. Never concatenate player input into SQL.
 - Keep identifiers (table and column names) fixed in trusted code.
 - Do not call `dbPoll(queryHandle, -1)`; the API is asynchronous.
+
+The connection's SQL debug logging is disabled to avoid writing query data to the database debug log. Resource logs contain status and error codes, not credentials or SQL values.
 
 This resource does not implement account registration, login, migrations, transactions, or gameplay persistence yet.
