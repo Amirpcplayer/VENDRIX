@@ -70,7 +70,8 @@ addEventHandler("onVendrixDatabaseQueryComplete", resourceRoot, onHistoryQueryCo
 addEvent("vendrix:accounts:requestHistory", true)
 addEventHandler("vendrix:accounts:requestHistory", root, function()
     local player = client
-    if not player or source ~= player or not isPlayerAuthenticated(player) then
+    if not player or source ~= player or not isPlayerAuthenticated(player)
+        or not VENDRIX_ACCOUNTS_canRequest(player) then
         return
     end
 
