@@ -224,10 +224,12 @@ addEventHandler("vendrix:accounts:register", root, function(username, password)
     end
     if not VENDRIX_ACCOUNTS_canRequest(player) then
         diagnostic("register rejected: request rate limit or cooldown.")
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "request_limited")
         return
     end
     if not VENDRIX_ACCOUNTS_beginAction(player) then
         diagnostic("register rejected: player already has a pending action.")
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "request_busy")
         return
     end
     diagnostic("register accepted initial guards.")
@@ -293,8 +295,16 @@ end)
 addEvent("vendrix:accounts:login", true)
 addEventHandler("vendrix:accounts:login", root, function(username, password)
     local player = client
-    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
-        or not VENDRIX_ACCOUNTS_beginAction(player) then
+    diagnostic(("login event received clientValid=%s sourceIsClient=%s usernameType=%s"):format(
+        tostring(isElement(player) and getElementType(player) == "player"), tostring(source == player), type(username)
+    ))
+    if not isElement(player) or getElementType(player) ~= "player" or source ~= player then return end
+    if not VENDRIX_ACCOUNTS_canRequest(player) then
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "request_limited")
+        return
+    end
+    if not VENDRIX_ACCOUNTS_beginAction(player) then
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "request_busy")
         return
     end
 
@@ -330,8 +340,17 @@ end)
 addEvent("vendrix:accounts:changePassword", true)
 addEventHandler("vendrix:accounts:changePassword", root, function(currentPassword, newPassword)
     local player = client
-    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
-        or not isPlayerAuthenticated(player) or not VENDRIX_ACCOUNTS_beginAction(player) then
+    if not isElement(player) or getElementType(player) ~= "player" or source ~= player then return end
+    if not VENDRIX_ACCOUNTS_canRequest(player) then
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "request_limited")
+        return
+    end
+    if not isPlayerAuthenticated(player) then
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
+        return
+    end
+    if not VENDRIX_ACCOUNTS_beginAction(player) then
+        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "request_busy")
         return
     end
 
