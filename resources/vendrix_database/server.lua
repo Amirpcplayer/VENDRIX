@@ -143,11 +143,26 @@ local function isValidParameter(value)
 end
 
 function isReady()
-    if not isTrustedCaller() then
+    local trusted = isTrustedCaller()
+    local callerName = "unavailable"
+
+    if sourceResource and isElement(sourceResource) then
+        callerName = getResourceName(sourceResource) or "unknown"
+    end
+
+    local connectionValid = connection ~= nil and isElement(connection)
+    log("DEBUG", ("isReady called; caller=%s; trusted=%s; ready=%s; connectionValid=%s."):format(
+        tostring(callerName),
+        tostring(trusted),
+        tostring(ready),
+        tostring(connectionValid)
+    ))
+
+    if not trusted then
         return false
     end
 
-    return ready and connection ~= nil and isElement(connection)
+    return ready and connectionValid
 end
 
 function queryAsync(callback, sql, ...)
