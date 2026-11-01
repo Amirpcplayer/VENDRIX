@@ -1,23 +1,26 @@
 # VENDRIX RPG
 
-Initial technical scaffold for the VENDRIX MTA:SA server.
+Initial technical foundation for the VENDRIX MTA:SA server.
 
-## Status
-This is a starter scaffold only. It does not include gameplay features, database schema, credentials, or deployment automation.
+## Current status
+- Initial identity schema migration: applied manually to the verified local `vendrix_rpg` database.
+- `vendrix_shared`: shared public constants only; no secrets.
+- `vendrix_database`: native MTA MySQL connection, private resource settings, startup connection check, and asynchronous parameterized query export.
+- No account, character, economy, or gameplay flows have been implemented.
 
-## Requirements to verify before use
-- Confirm the exact MTA:SA server version and Lua runtime.
-- Confirm the available database support for `dbConnect` on this server build.
-- Configure a dedicated MariaDB account with least privilege.
-- Keep real credentials in a local, untracked configuration file.
-- Review all files and run the acceptance checks before deployment.
+## Requirements before starting the database resource
+- Use an MTA server build with native `dbConnect("mysql", ...)` support.
+- Use MariaDB 10.11+ and create a dedicated database user with only the required privileges on `vendrix_rpg`.
+- Configure the private `vendrix_database` settings in the local MTA settings registry. Never commit credentials or paste them into chat.
+- Start resources in this order: `vendrix_shared`, then `vendrix_database`, then `vendrix_core`.
+- Run the local development connection test before considering deployment.
 
-## Proposed resource startup order
-1. `vendrix_shared`
-2. `vendrix_database`
-3. `vendrix_core`
-
-The database resource intentionally does not connect automatically yet: the exact MTA/database support and local credentials have not been verified. No database changes are made by this scaffold.
+## Database API
+Only server resources whose names begin with `vendrix_` may call the database exports.
+Use `exports.vendrix_database:isReady()` to check readiness and
+`exports.vendrix_database:queryAsync(callback, sql, ...)` for parameterized queries.
+Query callbacks receive `result, affectedRows, lastInsertId, errorCode, errorMessage`.
+Do not use blocking `dbPoll(..., -1)` in gameplay code.
 
 ## Player-facing text
 Any future player-facing UI must use Latin-script Finglish, per project requirements.
