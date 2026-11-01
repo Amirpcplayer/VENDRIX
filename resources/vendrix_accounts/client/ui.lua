@@ -12,6 +12,10 @@ local CONFIG = VENDRIX_ACCOUNT_UI or {
     ENABLE_BACKGROUND_MUSIC = true
 }
 
+local function diagnostic(message)
+    outputDebugString(("[VENDRIX][DIAG][accounts-client] %s"):format(message), 3)
+end
+
 local function sendToBrowser(eventName, success, code, rows)
     if not browserReady or not isElement(browser) then
         return
@@ -101,7 +105,12 @@ local function createNexusBrowser()
 end
 
 local function handleBrowserAction(action, data)
+    diagnostic(("handleBrowserAction actionType=%s dataType=%s"):format(
+        type(action), type(data)
+    ))
+
     if type(action) ~= "string" or type(data) ~= "table" then
+        diagnostic("handleBrowserAction rejected invalid action/data types")
         return
     end
 
@@ -109,6 +118,7 @@ local function handleBrowserAction(action, data)
         local username = type(data.username) == "string" and data.username or ""
         local password = type(data.password) == "string" and data.password or ""
         if #username > 20 or #password > 72 then
+            diagnostic(("credential size rejected action=%s"):format(action))
             sendToBrowser(action .. "Result", false, "invalid_credentials")
             return
         end
@@ -117,7 +127,10 @@ local function handleBrowserAction(action, data)
             and "vendrix:accounts:register"
             or "vendrix:accounts:login"
 
-        triggerServerEvent(eventName, localPlayer, username, password)
+        local triggered = triggerServerEvent(eventName, localPlayer, username, password)
+        diagnostic(("triggerServerEvent event=%s returned=%s"):format(
+            eventName, tostring(triggered)
+        ))
         return
     end
 
@@ -150,6 +163,7 @@ end
 
 addEvent("vendrix:accounts:cefAction", true)
 addEventHandler("vendrix:accounts:cefAction", root, function(action, data)
+    diagnostic(("cefAction received actionType=%s"):format(type(action)))
     startMusic()
     handleBrowserAction(action, data)
 end)
