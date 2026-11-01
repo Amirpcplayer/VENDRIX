@@ -1,5 +1,5 @@
 <meta>
-    <info author="VENDRIX Team" name="VENDRIX Accounts" type="script" version="0.2.0" />
+    <info author="VENDRIX Team" name="VENDRIX Accounts" type="script" version="0.3.0" />
     <include resource="vendrix_shared" />
     <include resource="vendrix_database" />
     <script src="server/config.lua" type="server" />
@@ -9,6 +9,9 @@
     <script src="server/login_history.lua" type="server" />
     <script src="client/config.lua" type="client" />
     <script src="client/ui.lua" type="client" />
+    <file src="web/index.html" />
+    <file src="web/css/app.css" />
+    <file src="web/js/app.js" />
     <export function="isPlayerAuthenticated" type="server" />
     <export function="getPlayerAccountId" type="server" />
 </meta>
