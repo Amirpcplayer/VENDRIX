@@ -13,7 +13,7 @@
 ## Dependency direction
 `vendrix_shared` <- `vendrix_database` <- `vendrix_core` is the intended startup dependency chain, with `vendrix_core` also depending on `vendrix_shared`.
 
-Avoid circular resource dependencies. Cross-resource calls must be documented and validated. The database export accepts calls only from project resources whose names begin with `vendrix_`.
+Avoid circular resource dependencies. Cross-resource calls must be documented and validated. At this phase, only `vendrix_core` is allowlisted to use the database exports. Add future project resources explicitly after review.
 
 ## Data ownership
 Each future domain has one authoritative server-side owner. For example, only the economy service may mutate balances; inventory code must not directly update wallet data.
