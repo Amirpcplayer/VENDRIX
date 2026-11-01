@@ -1,3 +1,8 @@
+local function finish(player, eventName, success, code)
+    VENDRIX_ACCOUNTS_endAction(player)
+    VENDRIX_ACCOUNTS_sendResult(player, eventName, success, code)
+end
+
 local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId, errorCode, errorMessage)
     local item = VENDRIX_ACCOUNTS_getPending(requestId)
     if not item then
@@ -12,25 +17,26 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
     if item.action == "register_insert" then
         if result == false then
             local code = tonumber(errorCode) == 1062 and "username_taken" or "register_failed"
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, code)
-            return
+            finish(player, "vendrix:accounts:registerResult", false, code)
+        else
+            finish(player, "vendrix:accounts:registerResult", true, "registered")
         end
-
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", true, "registered")
         return
     end
 
     if item.action == "login_lookup" then
         if type(result) ~= "table" or not result[1] then
             VENDRIX_ACCOUNTS_recordLogin(nil, item.username, false, "invalid_credentials")
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+            finish(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+            item.password = nil
             return
         end
 
         local row = result[1]
         if tonumber(row.status) ~= 1 then
             VENDRIX_ACCOUNTS_recordLogin(tonumber(row.id), item.username, false, "invalid_credentials")
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+            finish(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+            item.password = nil
             return
         end
 
@@ -47,7 +53,9 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
 
     if item.action == "password_lookup" then
         if type(result) ~= "table" or not result[1] then
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
+            finish(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
+            item.currentPassword = nil
+            item.newPassword = nil
             return
         end
 
@@ -65,11 +73,10 @@ local function onDatabaseComplete(requestId, result, affectedRows, lastInsertId,
 
     if item.action == "password_update" then
         if result == false or tonumber(affectedRows) ~= 1 then
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "password_update_failed")
-            return
+            finish(player, "vendrix:accounts:passwordResult", false, "password_update_failed")
+        else
+            finish(player, "vendrix:accounts:passwordResult", true, "password_changed")
         end
-
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", true, "password_changed")
     end
 end
 
@@ -81,14 +88,14 @@ function VENDRIX_ACCOUNTS_verifyLogin(player, username, password, accountId, pas
         return
     end
 
-    local ok = passwordVerify(password, passwordHashValue, {}, function(matches)
+    local accepted = passwordVerify(password, passwordHashValue, {}, function(matches)
         if not isElement(player) then
             return
         end
 
         if not matches then
             VENDRIX_ACCOUNTS_recordLogin(accountId, username, false, "invalid_credentials")
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+            finish(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
             return
         end
 
@@ -96,7 +103,7 @@ function VENDRIX_ACCOUNTS_verifyLogin(player, username, password, accountId, pas
         if not created then
             VENDRIX_ACCOUNTS_recordLogin(accountId, username, false, reason or "session_rejected")
             local code = reason == "account_already_active" and "account_in_use" or "login_failed"
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, code)
+            finish(player, "vendrix:accounts:loginResult", false, code)
             return
         end
 
@@ -108,40 +115,42 @@ function VENDRIX_ACCOUNTS_verifyLogin(player, username, password, accountId, pas
             "UPDATE accounts SET last_login_at = UTC_TIMESTAMP(3) WHERE id = ?",
             accountId
         )
-
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", true, "logged_in")
+        finish(player, "vendrix:accounts:loginResult", true, "logged_in")
     end)
 
-    if not ok then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "login_failed")
+    if not accepted then
+        finish(player, "vendrix:accounts:loginResult", false, "login_failed")
     end
 end
 
 function VENDRIX_ACCOUNTS_verifyPasswordChange(player, accountId, storedHash, currentPassword, newPassword)
     if not isElement(player) or not isPlayerAuthenticated(player)
         or getPlayerAccountId(player) ~= accountId then
+        finish(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
         return
     end
 
-    local ok = passwordVerify(currentPassword, storedHash, {}, function(matches)
+    local accepted = passwordVerify(currentPassword, storedHash, {}, function(matches)
         if not isElement(player) or not isPlayerAuthenticated(player)
             or getPlayerAccountId(player) ~= accountId then
+            VENDRIX_ACCOUNTS_endAction(player)
             return
         end
 
         if not matches then
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "current_password_wrong")
+            finish(player, "vendrix:accounts:passwordResult", false, "current_password_wrong")
             return
         end
 
-        passwordHash(newPassword, "bcrypt", { cost = VENDRIX_ACCOUNTS.BCRYPT_COST }, function(newHash)
+        local hashAccepted = passwordHash(newPassword, "bcrypt", { cost = VENDRIX_ACCOUNTS.BCRYPT_COST }, function(newHash)
             if not isElement(player) or not isPlayerAuthenticated(player)
                 or getPlayerAccountId(player) ~= accountId then
+                VENDRIX_ACCOUNTS_endAction(player)
                 return
             end
 
             if type(newHash) ~= "string" then
-                VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "hash_failed")
+                finish(player, "vendrix:accounts:passwordResult", false, "hash_failed")
                 return
             end
 
@@ -155,45 +164,50 @@ function VENDRIX_ACCOUNTS_verifyPasswordChange(player, accountId, storedHash, cu
             )
 
             if not queued then
-                VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
+                finish(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
             end
         end)
+
+        if not hashAccepted then
+            finish(player, "vendrix:accounts:passwordResult", false, "hash_failed")
+        end
     end)
 
-    if not ok then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
+    if not accepted then
+        finish(player, "vendrix:accounts:passwordResult", false, "password_change_failed")
     end
 end
 
 addEvent("vendrix:accounts:register", true)
 addEventHandler("vendrix:accounts:register", root, function(username, password)
     local player = client
-    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player) then
+    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
+        or not VENDRIX_ACCOUNTS_beginAction(player) then
         return
     end
 
     if isPlayerAuthenticated(player) then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "already_authenticated")
+        finish(player, "vendrix:accounts:registerResult", false, "already_authenticated")
         return
     end
 
     if not VENDRIX_ACCOUNTS_validUsername(username) then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "invalid_username")
+        finish(player, "vendrix:accounts:registerResult", false, "invalid_username")
         return
     end
 
     if not VENDRIX_ACCOUNTS_validPassword(password) then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "invalid_password")
+        finish(player, "vendrix:accounts:registerResult", false, "invalid_password")
         return
     end
 
-    passwordHash(password, "bcrypt", { cost = VENDRIX_ACCOUNTS.BCRYPT_COST }, function(hashedPassword)
+    local accepted = passwordHash(password, "bcrypt", { cost = VENDRIX_ACCOUNTS.BCRYPT_COST }, function(hashedPassword)
         if not isElement(player) then
             return
         end
 
         if type(hashedPassword) ~= "string" then
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "hash_failed")
+            finish(player, "vendrix:accounts:registerResult", false, "hash_failed")
             return
         end
 
@@ -210,26 +224,31 @@ addEventHandler("vendrix:accounts:register", root, function(username, password)
         )
 
         if not queued then
-            VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:registerResult", false, "database_unavailable")
+            finish(player, "vendrix:accounts:registerResult", false, "database_unavailable")
         end
     end)
+
+    if not accepted then
+        finish(player, "vendrix:accounts:registerResult", false, "hash_failed")
+    end
 end)
 
 addEvent("vendrix:accounts:login", true)
 addEventHandler("vendrix:accounts:login", root, function(username, password)
     local player = client
-    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player) then
+    if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
+        or not VENDRIX_ACCOUNTS_beginAction(player) then
         return
     end
 
     if isPlayerAuthenticated(player) then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "already_authenticated")
+        finish(player, "vendrix:accounts:loginResult", false, "already_authenticated")
         return
     end
 
     if not VENDRIX_ACCOUNTS_validUsername(username)
         or not VENDRIX_ACCOUNTS_validPassword(password) then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
+        finish(player, "vendrix:accounts:loginResult", false, "invalid_credentials")
         return
     end
 
@@ -242,7 +261,7 @@ addEventHandler("vendrix:accounts:login", root, function(username, password)
     )
 
     if not queued then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:loginResult", false, "database_unavailable")
+        finish(player, "vendrix:accounts:loginResult", false, "database_unavailable")
     end
 end)
 
@@ -250,14 +269,14 @@ addEvent("vendrix:accounts:changePassword", true)
 addEventHandler("vendrix:accounts:changePassword", root, function(currentPassword, newPassword)
     local player = client
     if not player or source ~= player or not VENDRIX_ACCOUNTS_canRequest(player)
-        or not isPlayerAuthenticated(player) then
+        or not isPlayerAuthenticated(player) or not VENDRIX_ACCOUNTS_beginAction(player) then
         return
     end
 
     if not VENDRIX_ACCOUNTS_validPassword(currentPassword)
         or not VENDRIX_ACCOUNTS_validPassword(newPassword)
         or currentPassword == newPassword then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "invalid_password")
+        finish(player, "vendrix:accounts:passwordResult", false, "invalid_password")
         return
     end
 
@@ -271,7 +290,7 @@ addEventHandler("vendrix:accounts:changePassword", root, function(currentPasswor
     )
 
     if not queued then
-        VENDRIX_ACCOUNTS_sendResult(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
+        finish(player, "vendrix:accounts:passwordResult", false, "database_unavailable")
     end
 end)
 
