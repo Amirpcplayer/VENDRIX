@@ -20,7 +20,11 @@
     password_change_failed: ["تغییر رمز عبور انجام نشد.", "error"],
     password_update_failed: ["ذخیره رمز عبور جدید انجام نشد.", "error"],
     logged_out: ["با موفقیت از حساب خارج شدید.", "success"],
-    history_unavailable: ["تاریخچه ورود در دسترس نیست.", "error"]
+    history_unavailable: ["تاریخچه ورود در دسترس نیست.", "error"],
+    request_limited: ["درخواست‌های زیادی ارسال شده؛ کمی بعد دوباره تلاش کنید.", "error"],
+    request_busy: ["درخواست قبلی هنوز در حال پردازش است.", "error"],
+    request_timeout: ["پاسخی از سرور دریافت نشد؛ دوباره تلاش کنید.", "error"],
+    event_failed: ["ارسال درخواست به سرور بازی ناموفق بود.", "error"]
   };
   let audioUnlockSent = false;
   document.addEventListener("pointerdown", function () {
@@ -30,11 +34,12 @@
   }, { once: true });
   function bridge(action, data) {
     if (window.mta && typeof window.mta.triggerEvent === "function") {
-      state.busy = true;
       window.mta.triggerEvent("vendrix:accounts:cefAction", action, data || {});
-    } else {
-      setStatus("ارتباط با بازی در دسترس نیست.", "error");
+      return true;
     }
+    setBusy(false);
+    setStatus("ارتباط با بازی در دسترس نیست.", "error");
+    return false;
   }
   function setStatus(message, kind) {
     const node = $("status");
@@ -57,9 +62,15 @@
   function clearPasswords() {
     ["password","confirm","currentPassword","newPassword","newConfirm"].forEach(id => { if ($(id)) $(id).value = ""; });
   }
+  let requestTimeout = null;
   function setBusy(value) {
     state.busy = value;
+    if (requestTimeout !== null) { clearTimeout(requestTimeout); requestTimeout = null; }
     document.querySelectorAll("button").forEach(b => { b.disabled = value; });
+    if (value) requestTimeout = setTimeout(() => {
+      setBusy(false);
+      setStatus(messages.request_timeout[0], messages.request_timeout[1]);
+    }, 25000);
   }
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     showMode(b.dataset.mode);
