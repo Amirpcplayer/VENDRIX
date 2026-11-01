@@ -260,7 +260,7 @@ local function drawLoginRegister()
     else
         button(contentX, panelY + px(660), contentW, px(42), "BAZ GASHT BE VOROOD", false)
     end
-    drawStatus(contentX, panelY + px(635), contentW)
+    drawStatus(contentX, panelY + px(322), contentW)
 end
 
 local function drawDashboard()
