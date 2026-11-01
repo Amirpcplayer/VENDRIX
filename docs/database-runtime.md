@@ -33,7 +33,7 @@ set @vendrix_database.db_user vendrix_app
 set @vendrix_database.db_password YOUR_LOCAL_PASSWORD
 ```
 
-MTA stores resource settings in its local settings registry, outside this Git repository. Protect that file and its backups. Do not use the MariaDB root account. Create a dedicated user with only the privileges needed by the application on `vendrix_rpg.*` (initially SELECT, INSERT, UPDATE and DELETE); do not grant global privileges or schema-altering permissions to the runtime account.
+MTA stores resource settings in its local settings registry, outside this Git repository. Protect that file and its backups. Do not use the MariaDB root account. Create a dedicated user with only the privileges needed by the application on `vendrix_rpg.*`; do not grant global privileges or schema-altering permissions to the runtime account.
 
 ## Export API
 
@@ -45,33 +45,27 @@ if exports.vendrix_database:isReady() then
 end
 ```
 
-At this phase, only the exact resource name `vendrix_core` is allowlisted. Future domain resources must be added explicitly after review.
-
 ### Asynchronous query
 
 ```lua
+local requestId = 1001 -- Generate a unique numeric ID in trusted server code.
 local queued = exports.vendrix_database:queryAsync(
-    function(result, affectedRows, lastInsertId, errorCode, errorMessage)
-        if result == false then
-            -- Handle the database error without exposing secrets to players.
-            return
-        end
-
-        -- Process result rows or affected-row information here.
-    end,
+    requestId,
     "SELECT id, username FROM accounts WHERE username = ?",
     username
 )
 ```
 
-- Return value: `true` if MTA accepted the query for processing; otherwise `false`.
-- Callback arguments: `result, affectedRows, lastInsertId, errorCode, errorMessage`.
-- On failure, `result` is `false` and error details are supplied to the server-side callback.
+The call returns `true` when MTA accepted the query for processing, or `false` when it could not be queued. The database resource sends completion to the calling resource root through `onVendrixDatabaseQueryComplete` with:
+
+```text
+requestId, result, affectedRows, lastInsertId, errorCode, errorMessage
+```
+
 - Query parameters must be strings or finite numbers, with no more than 64 values.
 - SQL values must use `?` placeholders. Never concatenate player input into SQL.
 - Keep identifiers (table and column names) fixed in trusted code.
 - Do not call `dbPoll(queryHandle, -1)`; the API is asynchronous.
+- Only `vendrix_core` and `vendrix_accounts` are currently allowlisted.
 
 The connection's SQL debug logging is disabled to avoid writing query data to the database debug log. Resource logs contain status and error codes, not credentials or SQL values.
-
-This resource does not implement account registration, login, migrations, transactions, or gameplay persistence yet.
