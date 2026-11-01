@@ -25,14 +25,19 @@ local function getSetting(name)
     return tostring(value)
 end
 
-local function isTrustedCaller()
-    -- MTA supplies sourceResource for calls made through resource exports.
-    if not sourceResource or not isElement(sourceResource) then
-        return false
+local function isTrustedCaller(callerResource)
+    if callerResource == nil or callerResource == false then
+        return false, "unavailable"
     end
 
-    local callerName = getResourceName(sourceResource)
-    return type(callerName) == "string" and TRUSTED_CALLERS[callerName] == true
+    -- sourceResource is a resource handle, not a player/game element.
+    -- Resolve its name directly and fail closed if MTA rejects the handle.
+    local ok, callerName = pcall(getResourceName, callerResource)
+    if not ok or type(callerName) ~= "string" then
+        return false, "invalid-resource-handle"
+    end
+
+    return TRUSTED_CALLERS[callerName] == true, callerName
 end
 
 local function isValidHost(value)
@@ -143,14 +148,11 @@ local function isValidParameter(value)
 end
 
 function isReady()
-    local trusted = isTrustedCaller()
-    local callerName = "unavailable"
-
-    if sourceResource and isElement(sourceResource) then
-        callerName = getResourceName(sourceResource) or "unknown"
-    end
-
+    -- Capture the hidden export context before entering any helper function.
+    local callerResource = sourceResource
+    local trusted, callerName = isTrustedCaller(callerResource)
     local connectionValid = connection ~= nil and isElement(connection)
+
     log("DEBUG", ("isReady called; caller=%s; trusted=%s; ready=%s; connectionValid=%s."):format(
         tostring(callerName),
         tostring(trusted),
@@ -166,7 +168,10 @@ function isReady()
 end
 
 function queryAsync(callback, sql, ...)
-    if not isTrustedCaller() then
+    -- Capture the hidden export context before entering any helper function.
+    local callerResource = sourceResource
+    local trusted = isTrustedCaller(callerResource)
+    if not trusted then
         return false
     end
 
