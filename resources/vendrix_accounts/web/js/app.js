@@ -29,7 +29,6 @@
     window.mta.triggerEvent("vendrix:accounts:cefInteraction");
   }, { once: true });
   function bridge(action, data) {
-    if (state.busy) return;
     if (window.mta && typeof window.mta.triggerEvent === "function") {
       state.busy = true;
       window.mta.triggerEvent("vendrix:accounts:cefAction", action, data || {});
