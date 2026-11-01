@@ -63,10 +63,10 @@ local function drawButton(x, y, w, h, label, primary)
         and isMouseInPosition(x, y, w, h)
     local bg = primary and tocolor(0, inside and 150 or 125, inside and 235 or 205, 245)
         or tocolor(18, 42, 65, inside and 250 or 225)
-    dxDrawRectangle(x, y, w, h, bg, true)
-    dxDrawRectangle(x, y, w, 2, tocolor(55, 190, 255, 230), true)
+    dxDrawRectangle(x, y, w, h, bg, false)
+    dxDrawRectangle(x, y, w, 2, tocolor(55, 190, 255, 230), false)
     dxDrawText(label, x, y, x + w, y + h, tocolor(240, 249, 255, 255),
-        1, "default-bold", "center", "center", false, false, true)
+        1, "default-bold", "center", "center", false, false, false)
 end
 
 function isMouseInPosition(x, y, w, h)
@@ -82,10 +82,10 @@ function isMouseInPosition(x, y, w, h)
 end
 
 local function renderPanel()
-    dxDrawRectangle(0, 0, screenW, screenH, tocolor(3, 9, 18, 220), true)
-    dxDrawRectangle(panelX, panelY, panelW, panelH, tocolor(7, 19, 33, 248), true)
-    dxDrawRectangle(panelX, panelY, panelW, 3, tocolor(30, 174, 255, 255), true)
-    dxDrawRectangle(panelX + 1, panelY + 1, panelW - 2, panelH - 2, tocolor(0, 0, 0, 0), true)
+    dxDrawRectangle(0, 0, screenW, screenH, tocolor(3, 9, 18, 220), false)
+    dxDrawRectangle(panelX, panelY, panelW, panelH, tocolor(7, 19, 33, 248), false)
+    dxDrawRectangle(panelX, panelY, panelW, 3, tocolor(30, 174, 255, 255), false)
+    dxDrawRectangle(panelX + 1, panelY + 1, panelW - 2, panelH - 2, tocolor(0, 0, 0, 0), false)
 
     dxDrawText("VENDRIX", panelX + 30, panelY + 24, panelX + panelW - 30, panelY + 70,
         tocolor(60, 190, 255, 255), 2.0, "default-bold", "center", "center")
@@ -108,7 +108,7 @@ local function renderPanel()
         dxDrawText("Vaziat: " .. statusText, panelX + 54, panelY + 425,
             panelX + panelW - 54, panelY + 465,
             statusGood and tocolor(80, 220, 180, 255) or tocolor(255, 175, 120, 255),
-            1, "default", "left", "center", true)
+            1, "default", "left", "center", false)
         dxDrawText("VENDRIX NETWORK  |  NEXUS ID", panelX + 30, panelY + 486,
             panelX + panelW - 30, panelY + 510, tocolor(90, 125, 150, 255),
             0.85, "default", "center", "center")
@@ -121,7 +121,7 @@ local function renderPanel()
         drawButton(panelX + 54, panelY + 315, 452, 42, "KHOROOJ AZ HESAB", false)
         dxDrawText(statusText, panelX + 54, panelY + 405, panelX + panelW - 54, panelY + 455,
             statusGood and tocolor(80, 220, 180, 255) or tocolor(255, 175, 120, 255),
-            1, "default", "center", "center", true)
+            1, "default", "center", "center", false)
     elseif mode == "password" then
         dxDrawText("Taghir Ramz-e Obor", panelX + 54, panelY + 112,
             panelX + panelW - 54, panelY + 148, tocolor(240, 248, 255, 255),
@@ -224,7 +224,7 @@ addEvent("vendrix:accounts:history", true)
 addEventHandler("vendrix:accounts:history", resourceRoot, function(rows, errorCode)
     if type(rows) ~= "table" then
         historyRows = {}
-        setStatus(messages[errorCode] or "Tarikچه vorood dar dastres nist.", false)
+        setStatus(messages[errorCode] or "Tarikhche vorood dar dastres nist.", false)
     else
         historyRows = rows
         setStatus("Tarikچه 90 rooze hesab shoma.", true)
